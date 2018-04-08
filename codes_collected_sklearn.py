@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin, ClassifierMixin
 from sklearn.metrics.pairwise import paired_distances 
-class ClusterClassifier(BaseEstimator, ClassifierMixin):
+class KmeansClusterClassifier(BaseEstimator, ClassifierMixin):
 
     def __init__(self, clustering_model=None):
         self.clustering_model = clustering_model
@@ -73,7 +73,55 @@ class ClusterClassifier(BaseEstimator, ClassifierMixin):
             kmcdis=None
             return ret
         
+class ClusterClassifier(BaseEstimator, ClassifierMixin):
 
+    def __init__(self, clustering_model=None):
+        self.clustering_model = clustering_model
+        self.comparison_summary=None
+
+
+    def fit(self, attributes0, label0):      
+        attributes=np.array(attributes0)
+        label=np.array(label0)
+        
+        self.clustering_model.fit(attributes)
+        pred=self.clustering_model.predict(attributes)
+
+        lab=pd.Series(label,name='lab',dtype=int)
+        pre=pd.Series(pred,name='pre',dtype=int)
+        kmcomp=pd.concat([lab,pre],axis=1)
+        
+        kmc1=kmcomp[kmcomp['lab']==1]
+        kmc0=kmcomp[kmcomp['lab']==0]
+        
+        sta1=kmc1['pre'].groupby(kmc1['pre']).count()
+        sta0=kmc0['pre'].groupby(kmc0['pre']).count()        
+        sta1a=sta1/len(kmc1)
+        sta0a=sta0/len(kmc0)
+        dif=sta1a/(sta1a+sta0a)
+        result=pd.concat([sta1,sta0,sta1a,sta0a,dif],axis=1)
+        result.columns=['sta1','sta0','sta1a','sta0a','dif']
+        resee=result.sort_values('dif',ascending=False)
+        resee['cumsta1a']=np.cumsum(resee['sta1a'])
+        resee['cumsta0a']=np.cumsum(resee['sta0a'])
+        resee['cumsta1']=np.cumsum(resee['sta1'])
+        resee['cumsta0']=np.cumsum(resee['sta0'])        
+      
+        self.comparison_summary=resee
+
+
+        
+    def predict(self,attributes0,thresh=0.75):
+        
+        attributes=np.array(attributes0)
+
+        pick_clusters=self.comparison_summary[self.comparison_summary['dif']>=thresh].index.tolist()
+        
+        res=self.clustering_model.predict(attributes)
+        return pd.Series(res).isin(pick_clusters).astype(int).values
+        
+      
+        
 #The codes below are from the github of the book:
 #Hands-on machine learning with sklearn and tensorflow.
 
