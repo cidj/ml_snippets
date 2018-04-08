@@ -8,9 +8,71 @@ Created on Tue Jan  9 15:46:31 2018
 
 import numpy as np
 import pandas as pd
-from sklearn.base import BaseEstimator, TransformerMixin
-from collections import Counter
-from scipy.sparse import csr_matrix
+from sklearn.base import BaseEstimator, TransformerMixin, ClassifierMixin
+from sklearn.metrics.pairwise import paired_distances 
+class ClusterClassifier(BaseEstimator, ClassifierMixin):
+
+    def __init__(self, clustering_model=None):
+        self.clustering_model = clustering_model
+        self.comparison_summary=None
+
+
+    def fit(self, attributes0, label0):      
+        attributes=np.array(attributes0)
+        label=np.array(label0)
+        
+        self.clustering_model.fit(attributes)
+        pred=self.clustering_model.predict(attributes)
+
+        lab=pd.Series(label,name='lab',dtype=int)
+        pre=pd.Series(pred,name='pre',dtype=int)
+        kmcomp=pd.concat([lab,pre],axis=1)
+        
+        kmc1=kmcomp[kmcomp['lab']==1]
+        kmc0=kmcomp[kmcomp['lab']==0]
+        
+        sta1=kmc1['pre'].groupby(kmc1['pre']).count()
+        sta0=kmc0['pre'].groupby(kmc0['pre']).count()        
+        sta1a=sta1/len(kmc1)
+        sta0a=sta0/len(kmc0)
+        dif=sta1a/(sta1a+sta0a)
+        result=pd.concat([sta1,sta0,sta1a,sta0a,dif],axis=1)
+        result.columns=['sta1','sta0','sta1a','sta0a','dif']
+        resee=result.sort_values('dif',ascending=False)
+        resee['cumsta1a']=np.cumsum(resee['sta1a'])
+        resee['cumsta0a']=np.cumsum(resee['sta0a'])
+        resee['cumsta1']=np.cumsum(resee['sta1'])
+        resee['cumsta0']=np.cumsum(resee['sta0'])        
+
+        kmcomp['dis']=pd.Series(map(lambda x1,x2: paired_distances(x1.reshape(1,-1),
+           self.clustering_model.cluster_centers_[x2].reshape(1,-1))[0],attributes,pred))
+    
+        distance_max=kmcomp['dis'].groupby(kmcomp['pre']).max().rename('distance_max')
+        distance_mean=kmcomp['dis'].groupby(kmcomp['pre']).mean().rename('distance_mean')       
+        distances=pd.concat([distance_max,distance_mean],axis=1)
+        resee=pd.merge(resee,pd.DataFrame(distances),left_index=True, right_index=True)
+        
+        self.comparison_summary=resee
+
+
+        
+    def predict(self,attributes0,thresh=0.75,compu_dis=False):
+        
+        attributes=np.array(attributes0)
+
+        pick_clusters=self.comparison_summary[self.comparison_summary['dif']>=thresh].index.tolist()
+        
+        res=self.clustering_model.predict(attributes)
+        ret=pd.Series(res).isin(pick_clusters).astype(int).values
+        
+        if compu_dis:
+            kmcdis=pd.Series(map(lambda x1,x2: paired_distances(x1.reshape(1,-1),
+               self.clustering_model.cluster_centers_[x2].reshape(1,-1))[0],attributes,res)) 
+            return ret,kmcdis
+        else:
+            kmcdis=None
+            return ret
+        
 
 #The codes below are from the github of the book:
 #Hands-on machine learning with sklearn and tensorflow.
@@ -68,29 +130,3 @@ class TopFeatureSelector(BaseEstimator, TransformerMixin):
         return self
     def transform(self, X):
         return X[:, self.feature_indices_]
-
-
-class WordCounterToVectorTransformer(BaseEstimator, TransformerMixin):
-    def __init__(self, vocabulary_size=1000):
-        self.vocabulary_size = vocabulary_size
-    def fit(self, X, y=None):
-        total_count = Counter()
-        for word_count in X:
-            for word, count in word_count.items():
-                total_count[word] += min(count, 10)
-        most_common = total_count.most_common()[:self.vocabulary_size]
-        self.most_common_ = most_common
-        self.vocabulary_ = {word: index + 1 for index, (word, count) in enumerate(most_common)}
-        return self
-    def transform(self, X, y=None):
-        rows = []
-        cols = []
-        data = []
-        for row, word_count in enumerate(X):
-            for word, count in word_count.items():
-                rows.append(row)
-                cols.append(self.vocabulary_.get(word, 0))
-                data.append(count)
-        return csr_matrix((data, (rows, cols)), shape=(len(X), self.vocabulary_size + 1))
-
-
