@@ -33,10 +33,15 @@ class KmeansClusterClassifier(BaseEstimator, ClassifierMixin):
         
         sta1=kmc1['pre'].groupby(kmc1['pre']).count()
         sta0=kmc0['pre'].groupby(kmc0['pre']).count()        
-        sta1a=sta1/len(kmc1)
-        sta0a=sta0/len(kmc0)
+
+        align=pd.concat([sta1/len(kmc1),sta0/len(kmc0)],axis=1).fillna(0)
+        align.columns=['sta1a','sta0a']
+        
+        sta1a=align['sta1a']
+        sta0a=align['sta0a']
+        
         dif=sta1a/(sta1a+sta0a)
-        result=pd.concat([sta1,sta0,sta1a,sta0a,dif],axis=1)
+        result=pd.concat([sta1,sta0,sta1a,sta0a,dif],axis=1).fillna(0)
         result.columns=['sta1','sta0','sta1a','sta0a','dif']
         resee=result.sort_values('dif',ascending=False)
         resee['cumsta1a']=np.cumsum(resee['sta1a'])
@@ -73,6 +78,7 @@ class KmeansClusterClassifier(BaseEstimator, ClassifierMixin):
             kmcdis=None
             return ret
         
+        
 class ClusterClassifier(BaseEstimator, ClassifierMixin):
 
     def __init__(self, clustering_model=None):
@@ -96,10 +102,15 @@ class ClusterClassifier(BaseEstimator, ClassifierMixin):
         
         sta1=kmc1['pre'].groupby(kmc1['pre']).count()
         sta0=kmc0['pre'].groupby(kmc0['pre']).count()        
-        sta1a=sta1/len(kmc1)
-        sta0a=sta0/len(kmc0)
+        
+        align=pd.concat([sta1/len(kmc1),sta0/len(kmc0)],axis=1).fillna(0)
+        align.columns=['sta1a','sta0a']
+        
+        sta1a=align['sta1a']
+        sta0a=align['sta0a']
+        
         dif=sta1a/(sta1a+sta0a)
-        result=pd.concat([sta1,sta0,sta1a,sta0a,dif],axis=1)
+        result=pd.concat([sta1,sta0,sta1a,sta0a,dif],axis=1).fillna(0)
         result.columns=['sta1','sta0','sta1a','sta0a','dif']
         resee=result.sort_values('dif',ascending=False)
         resee['cumsta1a']=np.cumsum(resee['sta1a'])
