@@ -41,7 +41,8 @@ class KmeansClusterClassifier(BaseEstimator, ClassifierMixin):
         sta0a=align['sta0a']
         
         dif=sta1a/(sta1a+sta0a)
-        result=pd.concat([sta1,sta0,sta1a,sta0a,dif],axis=1).fillna(0)
+        result=pd.concat([pd.concat([sta1,sta0,sta1a,sta0a],axis=1).fillna(0),
+                          dif],axis=1)
         result.columns=['sta1','sta0','sta1a','sta0a','dif']
         resee=result.sort_values('dif',ascending=False)
         resee['cumsta1a']=np.cumsum(resee['sta1a'])
@@ -110,7 +111,8 @@ class ClusterClassifier(BaseEstimator, ClassifierMixin):
         sta0a=align['sta0a']
         
         dif=sta1a/(sta1a+sta0a)
-        result=pd.concat([sta1,sta0,sta1a,sta0a,dif],axis=1).fillna(0)
+        result=pd.concat([pd.concat([sta1,sta0,sta1a,sta0a],axis=1).fillna(0),
+                          dif],axis=1)
         result.columns=['sta1','sta0','sta1a','sta0a','dif']
         resee=result.sort_values('dif',ascending=False)
         resee['cumsta1a']=np.cumsum(resee['sta1a'])
