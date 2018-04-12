@@ -138,7 +138,7 @@ class HDBSCANClusterClassifier(BaseEstimator, ClassifierMixin):
         label=np.array(label0)
         
         self.clustering_model.fit(attributes)
-        pred=self.clustering_model.predict(attributes)
+        pred=self.clustering_model.approximate_predict(self.clustering_model, attributes)
 
         lab=pd.Series(label,name='lab',dtype=int)
         pre=pd.Series(pred,name='pre',dtype=int)
