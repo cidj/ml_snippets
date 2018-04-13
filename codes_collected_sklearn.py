@@ -138,7 +138,8 @@ class HDBSCANClusterClassifier(BaseEstimator, ClassifierMixin):
         label=np.array(label0)
         
         self.clustering_model.fit(attributes)
-        pred=self.clustering_model.approximate_predict(self.clustering_model, attributes)
+        
+        pred=self.clustering_model.labels_
 
         lab=pd.Series(label,name='lab',dtype=int)
         pre=pd.Series(pred,name='pre',dtype=int)
@@ -176,7 +177,7 @@ class HDBSCANClusterClassifier(BaseEstimator, ClassifierMixin):
 
         pick_clusters=self.comparison_summary[self.comparison_summary['dif']>=thresh].index.tolist()
         
-        res,cluster_strengths=self.clustering_model.approximate_predict(self.clustering_model, attributes)
+        res,cluster_strengths=hdbscan.approximate_predict(self.clustering_model, attributes)
         
         return (pd.Series(res).isin(pick_clusters).astype(int).values,cluster_strengths)
         
