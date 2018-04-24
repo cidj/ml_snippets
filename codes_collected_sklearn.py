@@ -106,7 +106,7 @@ class KmeansClusterClassifier(BaseEstimator, ClassifierMixin):
         resee=pd.merge(resee,pd.DataFrame(distances),left_index=True, right_index=True)
         
         self.comparison_summary=resee
-        self.ordered_centers=pd.Series(self.clustering_model.cluster_centers_).iloc[resee.index]
+        self.ordered_centers=pd.DataFrame(self.clustering_model.cluster_centers_).iloc[resee.index]
 
 
         
