@@ -61,6 +61,7 @@ class KmeansClusterClassifier(BaseEstimator, ClassifierMixin):
     def __init__(self, clustering_model=None):
         self.clustering_model = clustering_model
         self.comparison_summary=None
+        self.ordered_centers=None
 
 
     def fit(self, attributes0, label0):      
@@ -105,6 +106,7 @@ class KmeansClusterClassifier(BaseEstimator, ClassifierMixin):
         resee=pd.merge(resee,pd.DataFrame(distances),left_index=True, right_index=True)
         
         self.comparison_summary=resee
+        self.ordered_centers=pd.Series(self.clustering_model.cluster_centers_).iloc[resee.index]
 
 
         
