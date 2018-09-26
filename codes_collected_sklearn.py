@@ -269,3 +269,33 @@ class FeatureSelector(BaseEstimator,TransformerMixin):
 
     def transform(self, X, y=None):
         return X[self.features_order.index[0:self.num].tolist()]
+
+
+# A simple Keras Classifier
+
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.layers import Dropout
+from keras.constraints import maxnorm
+from keras.wrappers.scikit_learn import KerasClassifier
+
+def append_dropout_layer(model, neurons_per_layer, dropout_ratio):
+    model.add(Dense(neurons_per_layer,activation='relu',
+                    kernel_constraint=maxnorm(3)))
+    model.add(Dropout(dropout_ratio))
+
+def make_model(number_of_inputs,number_of_layers=2, neurons_per_layer=32, dropout_ratio=0.2, optimizer='adam'):
+    model = Sequential()
+    model.add(Dense(neurons_per_layer, input_shape=[number_of_inputs],
+                    activation='relu', kernel_constraint=maxnorm(3)))
+    model.add(Dropout(dropout_ratio))
+    for i in range(number_of_layers-1):
+        append_dropout_layer(model, neurons_per_layer, dropout_ratio)
+    model.add(Dense(1,  activation='sigmoid'))
+    model.compile(loss='binary_crossentropy',
+                  optimizer=optimizer, metrics=['accuracy'])
+    return model
+
+# An example:
+# km=KerasClassifier(build_fn=make_model,number_of_inputs=10,
+#             nb_epoch=100,batch_size=128,dropout_ratio=0.1,verbose=0)
