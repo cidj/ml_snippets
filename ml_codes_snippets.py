@@ -206,7 +206,7 @@ class MostFrequentImputer(BaseEstimator, TransformerMixin):
         return X.fillna(self.most_frequent)
 
 
-class DataFrameImputer(TransformerMixin):
+class DataFrameImputer(BaseEstimator,TransformerMixin):
 
     def __init__(self):
         """Impute missing values.
