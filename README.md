@@ -1,2 +1,2 @@
-# codes_for_sklearn
+# ml_snippets
 Codes snippets for sklearn
