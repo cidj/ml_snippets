@@ -301,7 +301,7 @@ def make_model(number_of_inputs,number_of_layers=2, neurons_per_layer=32, dropou
 #             nb_epoch=100,batch_size=128,dropout_ratio=0.1,verbose=0)
 
 
-class ForestDataFrameImputer(BaseEstimator):
+class TreesDataFrameImputer(BaseEstimator):
 
     def __init__(self):
         """Impute missing values. Only dtype object are acceptable
