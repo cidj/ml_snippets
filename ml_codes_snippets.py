@@ -299,3 +299,71 @@ def make_model(number_of_inputs,number_of_layers=2, neurons_per_layer=32, dropou
 # An example:
 # km=KerasClassifier(build_fn=make_model,number_of_inputs=10,
 #             nb_epoch=100,batch_size=128,dropout_ratio=0.1,verbose=0)
+
+
+class ForestDataFrameImputer(BaseEstimator):
+
+    def __init__(self):
+        """Impute missing values. Only dtype object are acceptable
+
+        If transform method is used on new data, some columns are imputed with
+        mean values, where there are not nan values in the fit data.
+        values.
+
+        This imputer cannot be used in pipeline, which requires a transform
+        mechod that only has one parameter.
+
+        """
+
+    def fit(self, X, y=None):
+
+        from sklearn.tree import DecisionTreeRegressor
+
+        X_perc=X.count()/X.shape[0]
+
+        self.cols_ful=X_perc[X_perc==1].index.tolist()
+        self.cols_nan=X_perc[X_perc!=1].index.tolist()
+
+        self.means = X[self.cols_ful].mean().rename('means')
+
+        Xy=pd.concat([X[self.cols_ful],y],axis=1)
+
+        tY=X[self.cols_nan]
+        self.reg_dict=dict()
+
+        for i in self.cols_nan:
+            ty=tY[i]
+
+            X_train=Xy[ty.notnull()]
+            ty_train=ty[ty.notnull()]
+
+            rf=DecisionTreeRegressor()
+            rf.fit(X_train,ty_train)
+            self.reg_dict[i]=rf
+
+        return self
+
+    def transform(self, X, y=None):
+
+        X_ful=X[self.cols_ful].fillna(self.means)
+
+        Xy=pd.concat([X_ful,y],axis=1)
+
+        ty_ls=[]
+        tY=X[self.cols_nan]
+        for i in self.cols_nan:
+            ty=tY[i]
+
+            if ty.isnull().sum()>0:
+                X_test=Xy[ty.isnull()]
+                ty_test=ty[ty.isnull()]
+
+                ty_predict=pd.Series(
+                        self.reg_dict[i].predict(X_test),
+                        index=ty_test.index,
+                        name=ty_test.name,
+                        dtype=ty_test.dtype)
+                ty_ls.append(ty_predict)
+
+        to_fill=pd.concat(ty_ls,axis=1)
+        return X.fillna(self.means).fillna(to_fill)
