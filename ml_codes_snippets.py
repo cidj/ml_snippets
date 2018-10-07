@@ -367,3 +367,40 @@ class TreesDataFrameImputer(BaseEstimator):
 
         to_fill=pd.concat(ty_ls,axis=1)
         return X.fillna(self.means).fillna(to_fill)
+
+
+def TreesImpute(X,y):
+
+    from sklearn.tree import DecisionTreeRegressor
+
+    X_perc=X.count()/X.shape[0]
+
+    cols_ful=X_perc[X_perc==1].index
+    cols_nan=X_perc[X_perc!=1].index
+
+    Xy=pd.concat([X[cols_ful],y],axis=1)
+
+    tY=X[cols_nan]
+    ty_ls=[]
+
+    for i in cols_nan:
+        ty=tY[i]
+
+        X_train=Xy[ty.notnull()]
+        ty_train=ty[ty.notnull()]
+        X_test=Xy[ty.isnull()]
+        ty_test=ty[ty.isnull()]
+
+        rf=DecisionTreeRegressor()
+        rf.fit(X_train,ty_train)
+
+        ty_predict=pd.Series(
+                rf.predict(X_test),
+                index=ty_test.index,
+                name=ty_test.name,
+                dtype=ty_test.dtype)
+        ty_ls.append(ty_predict)
+
+    to_fill=pd.concat(ty_ls,axis=1)
+
+    return X.fillna(to_fill)
