@@ -309,7 +309,6 @@ class TreesDataFrameImputer(BaseEstimator,TransformerMixin):
         If transform method is used on new data, some columns are imputed with
         mean values, where there are not nan values in the fit data.
         values.
-
         """
 
     def fit(self, X, y=None):
