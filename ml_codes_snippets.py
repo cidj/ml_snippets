@@ -301,7 +301,7 @@ def make_model(number_of_inputs,number_of_layers=2, neurons_per_layer=32, dropou
 #             nb_epoch=100,batch_size=128,dropout_ratio=0.1,verbose=0)
 
 
-class TreesDataFrameImputer(BaseEstimator):
+class TreesDataFrameImputer(BaseEstimator,TransformerMixin):
 
     def __init__(self):
         """Impute missing values. Only dtype object are acceptable
@@ -309,9 +309,6 @@ class TreesDataFrameImputer(BaseEstimator):
         If transform method is used on new data, some columns are imputed with
         mean values, where there are not nan values in the fit data.
         values.
-
-        This imputer cannot be used in pipeline, which requires a transform
-        mechod that only has one parameter.
 
         """
 
@@ -326,7 +323,8 @@ class TreesDataFrameImputer(BaseEstimator):
 
         self.means = X[self.cols_ful].mean().rename('means')
 
-        Xy=pd.concat([X[self.cols_ful],y],axis=1)
+#        Xy=pd.concat([X[self.cols_ful],y],axis=1)
+        Xy=X[self.cols_ful]
 
         tY=X[self.cols_nan]
         self.reg_dict=dict()
@@ -345,9 +343,9 @@ class TreesDataFrameImputer(BaseEstimator):
 
     def transform(self, X, y=None):
 
-        X_ful=X[self.cols_ful].fillna(self.means)
-
-        Xy=pd.concat([X_ful,y],axis=1)
+#        X_ful=X[self.cols_ful].fillna(self.means)
+#        Xy=pd.concat([X_ful,y],axis=1)
+        Xy=X[self.cols_ful].fillna(self.means)
 
         ty_ls=[]
         tY=X[self.cols_nan]
@@ -370,6 +368,7 @@ class TreesDataFrameImputer(BaseEstimator):
 
 
 def TreesImpute(X,y):
+    """This function uses y, so it can only be used for fit process."""
 
     from sklearn.tree import DecisionTreeRegressor
 
@@ -403,4 +402,4 @@ def TreesImpute(X,y):
 
     to_fill=pd.concat(ty_ls,axis=1)
 
-    return X.fillna(to_fill)
+    return X.fillna(to_fill),y
